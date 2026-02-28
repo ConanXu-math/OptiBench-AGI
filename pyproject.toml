@@ -1,7 +1,33 @@
 [project]
 name = "optibench-agi"
 version = "0.1.0"
-description = "Add your description here"
+description = "Automated optimisation-paper benchmarking pipeline powered by Agno multi-agent framework"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "agno",
+    "openai",
+    "arxiv",
+    "pypdf",
+    "numpy",
+    "scipy",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+marker = ["marker-pdf"]
+nougat = ["nougat-ocr"]
+anthropic = ["anthropic"]
+google = ["google-genai"]
+all = [
+    "marker-pdf",
+    "nougat-ocr",
+    "anthropic",
+    "google-genai",
+]
+
+[project.scripts]
+optibench = "main:main"
+
+[tool.setuptools.packages.find]
+include = ["schema*", "agents*", "toolkits*"]
