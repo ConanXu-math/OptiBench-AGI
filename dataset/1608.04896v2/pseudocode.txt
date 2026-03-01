@@ -1,7 +1,0 @@
-BEGIN
-	Generate synthetic data with fixed perimeter c1 and area c2 constraints.
-	Define objective function that approximates eigenvalue λ^α₁(Ω_ext) using ellipse parameters [a, b].
-	Apply penalties if perimeter or area deviate from c1/c2.
-	Use scipy.optimize.minimize to maximize eigenvalue (via minimizing negative value).
-	Return optimal_value and solution [a, b].
-END

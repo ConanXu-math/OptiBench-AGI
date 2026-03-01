@@ -1,4 +1,13 @@
-from schema.models import BenchmarkItem, CodingOutput, FormalizationOutput, MathOutline, NotationItem
+from schema.models import (
+    BenchmarkItem,
+    CodingOutput,
+    ExtractionCritique,
+    FormalizationOutput,
+    MathOutline,
+    NotationItem,
+    QualityGateResult,
+    SectionSelection,
+)
 
 __all__ = [
     "NotationItem",
@@ -6,4 +15,7 @@ __all__ = [
     "BenchmarkItem",
     "CodingOutput",
     "FormalizationOutput",
+    "SectionSelection",
+    "ExtractionCritique",
+    "QualityGateResult",
 ]

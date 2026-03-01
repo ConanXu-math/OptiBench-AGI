@@ -18,15 +18,20 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from agents.coding import create_coding_agent
+from agents.extraction_critic import create_extraction_critic_agent
 from agents.extraction import create_extraction_agent
 from agents.formalization import create_formalization_agent
+from agents.locator import create_locator_agent
 from agents.research import create_research_agent
+from quality.gate import evaluate_quality_gate
 from schema.models import (
     BenchmarkItem,
     CodingOutput,
+    ExtractionCritique,
     FormalizationOutput,
     MathOutline,
     NotationItem,
+    SectionSelection,
 )
 from toolkits.validators import validate_lean_code, validate_python_code
 
@@ -56,7 +61,9 @@ class OptiBenchWorkflow:
         self.require_outline = require_outline
 
         self.research_agent: Agent = create_research_agent(model)
+        self.locator_agent: Agent = create_locator_agent(model)
         self.extraction_agent: Agent = create_extraction_agent(model)
+        self.extraction_critic_agent: Agent = create_extraction_critic_agent(model)
         self.coding_agent: Agent = create_coding_agent(model)
         self.formalization_agent: Agent = create_formalization_agent(model)
 
@@ -121,6 +128,11 @@ class OptiBenchWorkflow:
             pycode=coding_out.pycode,
             lean4_formal=lean4_formal,
         )
+        gate = evaluate_quality_gate(item, skip_lean=self.skip_lean)
+        if not gate.passed:
+            logger.warning("  Quality gate failed: %s", "; ".join(gate.notes))
+        else:
+            logger.info("  Quality gate passed.")
         self._save(item, paper_md=paper_md, arxiv_id=arxiv_id)
         return item
 
@@ -197,6 +209,8 @@ class OptiBenchWorkflow:
     def _step_extract(self, paper_md: str) -> MathOutline:
         """Step 2: extract a structured MathOutline from paper Markdown."""
         max_attempts = max(3, self.max_retries)
+        logger.info("  Step 2a: Locator agent selecting key sections")
+        focused_md = self._step_locate_sections(paper_md)
         prompt_prefix = (
             "Extract the primary optimisation formulation from the following "
             "paper Markdown.\n\n"
@@ -210,12 +224,13 @@ class OptiBenchWorkflow:
                 prompt_prefix = (
                     "The previous extraction failed or was empty. "
                     "You MUST return valid JSON matching MathOutline. "
-                    "Return non-empty 'objective' (LaTeX) and at least 'variables' or 'constraints'.\n\n"
+                    "Return non-empty 'objective' (LaTeX) and at least 'variables' or 'constraints'. "
+                    "Strictly follow the critic fix instructions if provided.\n\n"
                     "Paper Markdown:\n\n"
                 )
 
             budget = budgets[min(attempt - 1, len(budgets) - 1)]
-            extraction_md = _prepare_extraction_input(paper_md, char_budget=budget)
+            extraction_md = _prepare_extraction_input(focused_md, char_budget=budget)
             logger.info(
                 "  Extraction input length: %d chars (attempt %d/%d, budget=%d)",
                 len(extraction_md),
@@ -242,9 +257,20 @@ class OptiBenchWorkflow:
                 len(outline.constraints),
                 len(outline.variables),
             )
-            if _is_outline_meaningful(outline):
+            critique = self._step_critique_extraction(extraction_md, outline)
+            if _is_outline_meaningful(outline) and critique.is_acceptable:
                 return outline
-            logger.warning("  Outline empty/minimal, retrying extraction.")
+            if critique.fix_prompt.strip():
+                prompt_prefix = (
+                    "The previous extraction was rejected by quality critic.\n"
+                    f"Fix instruction:\n{critique.fix_prompt.strip()}\n\n"
+                    "Paper Markdown:\n\n"
+                )
+            logger.warning(
+                "  Outline rejected (acceptable=%s, score=%d), retrying extraction.",
+                critique.is_acceptable,
+                critique.score,
+            )
 
         if _is_outline_meaningful(last_outline):
             return last_outline
@@ -256,6 +282,69 @@ class OptiBenchWorkflow:
         raise RuntimeError(
             "Extraction failed after retries. "
             f"Last error: {last_error or 'empty outline returned repeatedly'}"
+        )
+
+    def _step_locate_sections(self, paper_md: str) -> str:
+        """Use locator agent to focus extraction context."""
+        if len(paper_md) < 5000:
+            return paper_md
+        prompt = (
+            "Select high-value sections for extracting optimization formulation.\n\n"
+            f"{paper_md}"
+        )
+        try:
+            response = self.locator_agent.run(prompt)
+            raw = response.content
+        except Exception as e:
+            logger.warning(
+                "  Locator API failed (%s); using heuristic extraction input.",
+                type(e).__name__,
+            )
+            return _prepare_extraction_input(paper_md, char_budget=12000)
+        if isinstance(raw, SectionSelection):
+            selected = raw.selected_markdown.strip()
+            if selected:
+                logger.info("  Locator selected %d chars.", len(selected))
+                return selected
+        elif isinstance(raw, str) and raw.strip():
+            try:
+                parsed = SectionSelection.model_validate_json(raw)
+                if parsed.selected_markdown.strip():
+                    logger.info("  Locator selected %d chars.", len(parsed.selected_markdown))
+                    return parsed.selected_markdown
+            except Exception:
+                pass
+        logger.warning("  Locator failed; using heuristic extraction input.")
+        return _prepare_extraction_input(paper_md, char_budget=12000)
+
+    def _step_critique_extraction(
+        self,
+        extraction_md: str,
+        outline: MathOutline,
+    ) -> ExtractionCritique:
+        """Critique extraction quality and produce fix prompt."""
+        prompt = (
+            "Review extraction quality.\n\n"
+            f"Source excerpt:\n```markdown\n{extraction_md[:6000]}\n```\n\n"
+            f"Extracted outline:\n```json\n{outline.model_dump_json(indent=2)}\n```"
+        )
+        response = self.extraction_critic_agent.run(prompt)
+        raw = response.content
+        if isinstance(raw, ExtractionCritique):
+            return raw
+        if isinstance(raw, str):
+            try:
+                if "```json" in raw:
+                    raw = raw.split("```json", 1)[1].split("```", 1)[0].strip()
+                return ExtractionCritique.model_validate_json(raw)
+            except Exception:
+                pass
+        # conservative default: request retry when critic unavailable
+        return ExtractionCritique(
+            score=30,
+            is_acceptable=False,
+            issues=["Critic unavailable or malformed output."],
+            fix_prompt="Ensure objective, constraints and variables strictly match source equations.",
         )
 
     def _step_code(self, outline: MathOutline) -> CodingOutput:

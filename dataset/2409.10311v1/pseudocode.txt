@@ -1,9 +1,0 @@
-Initialize x, y, z as zero vectors. For each iteration k:
-  1. Compute x_k = argmin_{x in H} { f(x) + <hat_z_k | Lx - hat_y_k> + γ/2 ||Lx - hat_y_k||^2 }
-  2. Compute v_k as a subgradient of g at approximate point tilde_y_k
-  3. Update e_k = v_k - hat_z_k + γ*(tilde_y_k - Lx_k)
-  4. Check error constraint: ||e_k||^2 + 2γ*ε_k <= σ^2 * min{ γ^2 ||Lx_k - hat_y_k||^2, ||v_k - hat_z_k||^2 }
-  5. Update auxiliaries: hat_z_{k+1} = hat_z_k + τγ(Lx_k - tilde_y_k)
-  6. Update dual: hat_y_{k+1} = (1-τ)*hat_y_k + τ/(γ)*(hat_z_k + γ*Lx_k - v_k)
-  7. Stop if convergence criterion is met.
-Return optimal value and solution x.

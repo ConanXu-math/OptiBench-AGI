@@ -69,3 +69,53 @@ class BenchmarkItem(BaseModel):
     pseudocode: str = Field(default="", description="Algorithm pseudocode")
     pycode: str = Field(default="", description="Validated Python implementation")
     lean4_formal: str = Field(default="", description="Lean 4 formal statement")
+
+
+class SectionSelection(BaseModel):
+    """Selected high-value sections for extraction."""
+
+    selected_markdown: str = Field(
+        ...,
+        description="Concise markdown excerpt focusing on problem formulation/method sections",
+    )
+    rationale: str = Field(
+        default="",
+        description="Why these sections were selected",
+    )
+
+
+class ExtractionCritique(BaseModel):
+    """Critic output for extracted MathOutline."""
+
+    score: int = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Quality score of extracted outline",
+    )
+    is_acceptable: bool = Field(
+        ...,
+        description="Whether extraction quality is acceptable for downstream coding",
+    )
+    issues: list[str] = Field(
+        default_factory=list,
+        description="Specific issues found in objective/constraints/variables",
+    )
+    fix_prompt: str = Field(
+        default="",
+        description="Actionable prompt to guide next extraction attempt",
+    )
+
+
+class QualityGateResult(BaseModel):
+    """Overall quality-gate result before final save."""
+
+    passed: bool = Field(..., description="Whether benchmark item passes quality gate")
+    checks: dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-check status map: ok/warn/fail",
+    )
+    notes: list[str] = Field(
+        default_factory=list,
+        description="Human-readable notes for failures/warnings",
+    )

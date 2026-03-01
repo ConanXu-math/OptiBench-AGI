@@ -1,5 +1,0 @@
-Algorithm: Optimize f(x) with no constraints
-1. Input: function f, variable x (dimension d), scalar α
-2. Set initial x to random vector in feasible space (e.g., [0,1]^d)
-3. Use scipy.optimize.minimize(f, x0=x) to find optimal x
-4. Return {optimal_value: f(optimal_x), solution: optimal_x}
