@@ -1,0 +1,19 @@
+{
+  "objective": "\\min_{x} f(x)",
+  "constraints": [],
+  "variables": [
+    "x"
+  ],
+  "notation_table": [
+    {
+      "symbol": "x",
+      "dimension": "d",
+      "description": "Vector of decision variables"
+    },
+    {
+      "symbol": "α",
+      "dimension": "scalar",
+      "description": "Step size parameter (related to problem scale)"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+function generate_synthetic_data(seed):
+    Initialize random number generator with seed
+    Generate x(t), y(t), z(t) as smooth curves (e.g., sine/cosine)
+    Set ε = 0.1, n = 32, r = 1.0
+    Return {x: array, y: array, z: array, ε: float, n: int, r: float}
+
+function solve(data):
+    Extract x, y, z, ε, n, r from data
+    Define objective function that minimizes error |(a,c) - (x,z)|
+    Define constraints:
+        - a_dot ≠ 0 (enforced via penalty or discretization)
+        - |v - y*u| ≤ ε*min(|u|, |u|^2) (discretized in s, t)
+        - average of γ(t,s) over S^1 equals (dot_x, dot_z)
+    Use scipy.optimize.minimize with appropriate bounds and constraints
+    Return {optimal_value, solution} where solution is {a, b, c, γ}

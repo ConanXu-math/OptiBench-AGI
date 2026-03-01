@@ -1,0 +1,8 @@
+Algorithm: Solve Polynomial Minimization over Compact Set
+1. Input: Objective function f(x), constraint set K ⊆ R^n (nonempty, closed)
+2. Generate synthetic data x₀ ∈ K (feasible starting point)
+3. Define objective function as a callable that returns f(x)
+4. Define constraint handler for K using scipy.optimize's constraints interface
+5. Use scipy.optimize.minimize with method='SLSQP' or 'trust-constr'
+6. Return optimal value and solution vector x_opt
+7. Ensure convexity by forcing quadratic or higher degree polynomial to be convex (e.g., diagonal quadratic form for tractability)

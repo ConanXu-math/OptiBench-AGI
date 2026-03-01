@@ -1,0 +1,34 @@
+{
+  "paper_name": "On the solution existence and stability of polynomial optimization problems",
+  "arxiv_id": "1808.06100v6",
+  "outline": {
+    "objective": "\\min_{x} f(x)",
+    "constraints": [
+      "x \\in K"
+    ],
+    "variables": [
+      "x"
+    ],
+    "notation_table": [
+      {
+        "symbol": "x",
+        "dimension": "n",
+        "description": "Decision variable vector"
+      },
+      {
+        "symbol": "K",
+        "dimension": "n",
+        "description": "Constraint set (nonempty, closed subset of R^n)"
+      },
+      {
+        "symbol": "f",
+        "dimension": "1",
+        "description": "Objective function (polynomial in n variables of degree d ≥ 2)"
+      }
+    ]
+  },
+  "prove_cot": "We are to formalize the minimization of a polynomial function $f: \\mathbb{R}^n \\to \\mathbb{R}$ over a nonempty, closed set $K \\subseteq \\mathbb{R}^n$, where $f$ is a polynomial of degree $d \\geq 2$. In Lean 4, we can define $\\mathbb{R}^n$ as $\\text{EuclideanSpace } \\mathbb{R} (\\text{Fin } n)$, and represent $f$ using `Polynomial` or via a `C1`/`Convex` function depending on assumptions. Since Mathlib supports constrained optimization with convex functions and compact sets (via `exists_min` etc.), we assume sufficient smoothness (e.g., $f$ is continuous and $K$ is compact) to ensure existence of a minimum. The proof sketch in LaTeX would involve:\n\n1. Leveraging continuity of $f$ and compactness of $K$ (since $K$ is closed and nonempty; if bounded, it’s compact).\n2. Applying the extreme value theorem: since $f$ is continuous and $K$ is compact, there exists $x_0 \\in K$ such that $f(x_0) = \\min_{x \\in K} f(x)$.\n3. If needed, formalizing polynomial structure using `Polynomial.Ring` or `Polynomial.Multivariate`, but note that minimizing polynomials over compact sets may require numerical methods or semidefinite relaxations — not directly provable symbolically without additional constraints.\n\nThus, the key formalization goal is to state the existence of a minimizer under the given conditions, using `Exists ∃ x ∈ K, ∀ y ∈ K, f(y) ≥ f(x)` — assuming $f$ is continuous and $K$ is compact.\n\nNote: The problem as stated does not guarantee uniqueness or computational attainment of the minimum unless further regularity (e.g., strict convexity) is assumed.",
+  "pseudocode": "Algorithm: Solve Polynomial Minimization over Compact Set\n1. Input: Objective function f(x), constraint set K ⊆ R^n (nonempty, closed)\n2. Generate synthetic data x₀ ∈ K (feasible starting point)\n3. Define objective function as a callable that returns f(x)\n4. Define constraint handler for K using scipy.optimize's constraints interface\n5. Use scipy.optimize.minimize with method='SLSQP' or 'trust-constr'\n6. Return optimal value and solution vector x_opt\n7. Ensure convexity by forcing quadratic or higher degree polynomial to be convex (e.g., diagonal quadratic form for tractability)",
+  "pycode": "import numpy as np\nfrom scipy.optimize import minimize\n\n\ndef generate_synthetic_data(seed: int = 42) -> dict:\n    np.random.seed(seed)\n    n = 5  # dimension of x\n    # Create a compact feasible set: a unit cube [0, 1]^n\n    x_low = np.zeros(n)\n    x_high = np.ones(n)\n    x = np.random.uniform(x_low, x_high, size=n)  # feasible point inside K\n    \n    # Construct objective: f(x) = sum_{i=1}^{n} x_i^2 + sum_{i<j} x_i * x_j\n    # This is a quadratic (degree 2) polynomial, convex if symmetric and positive definite\n    # But note: the problem says polynomial of degree ≥ 2 — this is acceptable.\n    # We construct it to be strictly convex.\n    A = np.eye(n) + np.random.rand(n, n)  # ensure positive definite (convex quadratic)\n    b = np.zeros(n)\n    c = 0.0\n    \n    return {\n        'n': n,\n        'x': x,\n        'A': A,  # Hessian matrix for quadratic part\n        'b': b,\n        'c': c,\n        'K_bounds': (x_low, x_high),\n        'K_dim': n\n    }\n\n\ndef solve(data: dict) -> dict:\n    n = data['n']\n    x0 = data['x']\n    A = data['A']\n    b = data['b']\n    c = data['c']\n    x_low, x_high = data['K_bounds']\n    \n    def objective(x):\n        # quadratic objective: (1/2) x^T A x + b^T x + c\n        # We use 1/2 to make derivative nice for minimization\n        return 0.5 * np.dot(x.T, np.dot(A, x)) + np.dot(b, x) + c\n    \n    def constraint_fn(x):\n        # Enforce bounds: x >= x_low, x <= x_high\n        return np.concatenate([x - x_low, x_high - x])\n    \n    constraints = ({\n        'type': 'ineq',\n        'fun': lambda x: constraint_fn(x)\n    })\n    \n    result = minimize(\n        fun=objective,\n        x0=x0,\n        method='SLSQP',\n        bounds=list(zip(x_low, x_high)),\n        constraints=constraints,\n        options={'disp': True}\n    )\n    \n    return {\n        'optimal_value': result.fun,\n        'solution': result.x,\n        'success': result.success,\n        'message': result.message\n    }\n\nif __name__ == '__main__':\n    data = generate_synthetic_data()\n    solution = solve(data)\n    print('Optimal Value:', solution['optimal_value'])\n    print('Solution Vector:', solution['solution'])\n    print('Success:', solution['success'])",
+  "lean4_formal": ""
+}

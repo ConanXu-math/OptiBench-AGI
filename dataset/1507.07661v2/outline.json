@@ -1,0 +1,67 @@
+{
+  "objective": "0",
+  "constraints": [
+    "\\dot{a}(t) \\neq 0",
+    "|v - y(t)u| \\leq \\varepsilon \\min\\{|u|, |u|^2\\}",
+    "\\frac{1}{2\\pi} \\oint_{S^1} \\gamma(t, s) \\, ds = (\\dot{x}(t), \\dot{z}(t))",
+    "\\left| (a(t), c(t)) - (x(t), z(t)) \\right| \\leq \\varepsilon"
+  ],
+  "variables": [
+    "a(t)",
+    "b(t)",
+    "c(t)",
+    "γ(t,s)"
+  ],
+  "notation_table": [
+    {
+      "symbol": "a(t)",
+      "dimension": "3",
+      "description": "decision variables for the approximating Legendrian curve"
+    },
+    {
+      "symbol": "b(t)",
+      "dimension": "1",
+      "description": "decision variable for the y-component approximation"
+    },
+    {
+      "symbol": "c(t)",
+      "dimension": "3",
+      "description": "decision variables for the approximating Legendrian curve"
+    },
+    {
+      "symbol": "x(t)",
+      "dimension": "3",
+      "description": "given smooth curve to approximate"
+    },
+    {
+      "symbol": "y(t)",
+      "dimension": "1",
+      "description": "given smooth curve to approximate"
+    },
+    {
+      "symbol": "z(t)",
+      "dimension": "1",
+      "description": "given smooth curve to approximate"
+    },
+    {
+      "symbol": "\\varepsilon > 0",
+      "dimension": "1",
+      "description": "small positive parameter controlling approximation accuracy"
+    },
+    {
+      "symbol": "n \\in \\mathbb{N}",
+      "dimension": "1",
+      "description": "integer parameter controlling discretization of loop integration"
+    },
+    {
+      "symbol": "\\gamma(t,s)",
+      "dimension": "R^2",
+      "description": "smooth integral kernel defining curve perturbation"
+    },
+    {
+      "symbol": "r > 0",
+      "dimension": "1",
+      "description": "measure normalizing factor for correction term"
+    }
+  ]
+}

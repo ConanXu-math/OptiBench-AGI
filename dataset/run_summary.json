@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-03-01T08:47:27.702925+00:00",
+  "query": "admm operator splitting convex optimization",
+  "requested_top_k": 2,
+  "total": 2,
+  "success": 1,
+  "failed": 1,
+  "search_results": [
+    {
+      "rank": 1,
+      "arxiv_id": "2402.07064v6",
+      "title": "Piecewise SOS-Convex Moment Optimization and Applications via Exact Semi-Definite Programs",
+      "summary": "This paper presents exact Semi-Definite Program (SDP) reformulations for infinite-dimensional moment optimization problems involving a new class of piecewise Sum-of-Squares (SOS)-convex functions and projected spectrahedral support sets. These reformulations show that solving a single SDP finds the optimal value and an optimal probability measure of the original moment problem. This is done by establishing an SOS representation for the non-negativity of a piecewise SOS-convex function over a pro"
+    },
+    {
+      "rank": 2,
+      "arxiv_id": "2409.10311v1",
+      "title": "A relative-error inexact ADMM splitting algorithm for convex optimization with inertial effects",
+      "summary": "We propose a new relative-error inexact version of the alternating direction method of multipliers (ADMM) for convex optimization. We prove the asymptotic convergence of our main algorithm as well as pointwise and ergodic iteration-complexities for residuals. We also justify the effectiveness of the proposed algorithm through some preliminary numerical experiments on regression problems."
+    }
+  ],
+  "items": [
+    {
+      "arxiv_id": "2402.07064v6",
+      "paper_name": "",
+      "status": "failed",
+      "error": "Coding agent did not return valid output (API errors or malformed response). Check your API key and try again.",
+      "output_dir": "dataset/2402.07064v6",
+      "stages": {
+        "search": "ok",
+        "download": "ok",
+        "extract": "not_run",
+        "codegen": "not_run",
+        "formalize": "prove_cot_only",
+        "organize": "partial"
+      }
+    },
+    {
+      "arxiv_id": "2409.10311v1",
+      "paper_name": "A relative-error inexact ADMM splitting algorithm for convex optimization with inertial effects",
+      "status": "success",
+      "output_dir": "./dataset/2409.10311v1",
+      "stages": {
+        "search": "ok",
+        "download": "ok",
+        "extract": "ok",
+        "codegen": "ok",
+        "formalize": "prove_cot_only",
+        "organize": "ok"
+      }
+    }
+  ]
+}

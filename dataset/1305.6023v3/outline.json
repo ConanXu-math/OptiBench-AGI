@@ -1,0 +1,9 @@
+{
+  "objective": "",
+  "constraints": [
+    "\nu = \nu_r + \nu_s",
+    "\rho_\beta(\theta) = \text{inf} \big\ran"
+  ],
+  "variables": [],
+  "notation_table": []
+}

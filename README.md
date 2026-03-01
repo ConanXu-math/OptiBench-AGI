@@ -37,6 +37,29 @@ python main.py "convex optimisation relaxation techniques"
 python main.py --arxiv-id 2301.12345
 ```
 
+## Tools (no API key required)
+
+Standalone commands for searching and downloading papers, or converting PDFs:
+
+```bash
+# Search arXiv and print results
+python main.py search "convex optimisation" --max 5
+
+# Download a paper by arXiv ID (PDF + optional Markdown)
+python main.py download 1406.0899
+python main.py download 1406.0899 --output ./papers --no-convert   # PDF only
+
+# Convert a local PDF to Markdown (requires marker or nougat)
+python main.py convert-pdf path/to/paper.pdf -o paper.md
+
+# List processed papers in dataset/
+python main.py list
+python main.py list --dataset-root ./dataset
+
+# Show metadata for an arXiv ID (title, authors, abstract)
+python main.py info 1406.0899
+```
+
 ## Configuration
 
 All configuration is via environment variables:

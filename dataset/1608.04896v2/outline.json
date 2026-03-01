@@ -1,0 +1,65 @@
+{
+  "objective": "\\max_{\\Omega \\text{ convex}, |\\partial\\Omega|=c_1} \\lambda^{\\alpha}_1(\\Omega_{ext}) = \\lambda^{\\alpha}_1((B^{\text{R}}_{R_1})_{ext})",
+  "constraints": [
+    "|∫_{\\partial\\Omega}| = c_1",
+    "|∫_{\\Omega}| = c_2"
+  ],
+  "variables": [
+    "\\Omega",
+    "c_1",
+    "c_2",
+    "\\alpha"
+  ],
+  "notation_table": [
+    {
+      "symbol": "\\Sigma",
+      "dimension": "1-dimensional Hausdorff measure",
+      "description": "Boundary of domain \\Omega (in R^2)"
+    },
+    {
+      "symbol": "|\\partial\\Omega|",
+      "dimension": "length",
+      "description": "Perimeter of domain \\Omega"
+    },
+    {
+      "symbol": "|\\Omega|",
+      "dimension": "area",
+      "description": "Area of domain \\Omega"
+    },
+    {
+      "symbol": "c_1",
+      "dimension": "length",
+      "description": "Constant perimeter constraint (positive real)"
+    },
+    {
+      "symbol": "c_2",
+      "dimension": "area",
+      "description": "Constant area constraint (positive real)"
+    },
+    {
+      "symbol": "\\alpha",
+      "dimension": "real number",
+      "description": "Real parameter for Robin boundary conditions (negative)"
+    },
+    {
+      "symbol": "\\Omega_{ext}",
+      "dimension": "open set",
+      "description": "The exterior domain: \\mathbb{R}^2 \\setminus \\Omega"
+    },
+    {
+      "symbol": "\\lambda^{\\alpha}_1(\\Omega_{ext})",
+      "dimension": "eigenvalue",
+      "description": "Lowest eigenvalue of the Robin Laplacian on \\Omega_{ext}"
+    },
+    {
+      "symbol": "B^{\text{R}}_{R_1}",
+      "dimension": "disk in R^2",
+      "description": "Disk with perimeter equal to |∫_Θ| = c_1"
+    },
+    {
+      "symbol": "B^{\text{R}}_{R_2}",
+      "dimension": "disk in R^2",
+      "description": "Disk with area equal to |∫_Θ| = c_2"
+    }
+  ]
+}
