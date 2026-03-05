@@ -34,13 +34,36 @@ except ImportError:
     pass
 
 
+# Ollama 本地 API 默认端点（OpenAI 兼容）
+OLLAMA_DEFAULT_BASE_URL = "http://localhost:11434/v1"
+
+
 def _build_model():
     """Resolve model from env vars in one place."""
     provider = os.getenv("OPTIBENCH_PROVIDER", "openai").lower()
     model_id = os.getenv("OPTIBENCH_MODEL", "gpt-4o")
-    base_url = os.getenv("OPTIBENCH_BASE_URL", "")
-    api_key = os.getenv("OPTIBENCH_API_KEY", "")
+    base_url = os.getenv("OPTIBENCH_BASE_URL", "").strip()
+    api_key = os.getenv("OPTIBENCH_API_KEY", "").strip()
     timeout_s = os.getenv("OPTIBENCH_API_TIMEOUT", "").strip()
+
+    # 本地 Ollama：默认 base_url，无需 api_key
+    if provider == "ollama":
+        from agno.models.openai.like import OpenAILike
+
+        kwargs: dict = {
+            "id": model_id,
+            "base_url": base_url or OLLAMA_DEFAULT_BASE_URL,
+        }
+        if timeout_s:
+            try:
+                kwargs["timeout"] = float(timeout_s)
+            except ValueError:
+                pass
+        try:
+            return OpenAILike(**kwargs)
+        except TypeError:
+            kwargs.pop("timeout", None)
+            return OpenAILike(**kwargs)
 
     if provider in ("openai-like", "openailike"):
         from agno.models.openai.like import OpenAILike
@@ -88,7 +111,7 @@ def _build_model():
 
     raise ValueError(
         f"Unknown OPTIBENCH_PROVIDER={provider!r}. "
-        "Supported: openai, openai-like, anthropic, google"
+        "Supported: openai, openai-like, ollama, anthropic, google"
     )
 
 

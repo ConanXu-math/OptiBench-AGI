@@ -53,12 +53,12 @@ def interactive_pipeline_args() -> argparse.Namespace:
 
     provider = prompt_choice(
         "LLM Provider",
-        ["openai", "openai-like", "anthropic", "google"],
+        ["openai", "openai-like", "ollama", "anthropic", "google"],
         os.getenv("OPTIBENCH_PROVIDER", "openai-like"),
     )
     os.environ["OPTIBENCH_PROVIDER"] = provider
 
-    model_default = os.getenv("OPTIBENCH_MODEL", "gpt-4o")
+    model_default = "qwen2.5:7b" if provider == "ollama" else os.getenv("OPTIBENCH_MODEL", "gpt-4o")
     model_id = prompt_str("Model ID", model_default)
     if model_id:
         os.environ["OPTIBENCH_MODEL"] = model_id
@@ -68,7 +68,12 @@ def interactive_pipeline_args() -> argparse.Namespace:
     if api_timeout:
         os.environ["OPTIBENCH_API_TIMEOUT"] = api_timeout
 
-    if provider in {"openai-like", "openailike"}:
+    if provider == "ollama":
+        base_default = os.getenv("OPTIBENCH_BASE_URL", "http://localhost:11434/v1")
+        base_url = prompt_str("Ollama API Base URL", base_default)
+        if base_url:
+            os.environ["OPTIBENCH_BASE_URL"] = base_url
+    elif provider in {"openai-like", "openailike"}:
         base_default = os.getenv("OPTIBENCH_BASE_URL", "")
         base_url = prompt_str("OpenAI-like Base URL", base_default)
         if base_url:

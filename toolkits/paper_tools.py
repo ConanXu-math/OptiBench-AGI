@@ -1,17 +1,56 @@
 """Paper 相关工具：arXiv 搜索、下载、PDF 转 Markdown。
 
 可在 CLI 子命令或 Agent 中复用。
+支持环境变量 OPTIBENCH_ARXIV_TIMEOUT、OPTIBENCH_ARXIV_BASE_URL（镜像）。
 """
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 from typing import Any
 
 import arxiv
 
 from toolkits.pdf_converter import convert_pdf_to_markdown
+
+# 默认 API 端点（可被 OPTIBENCH_ARXIV_BASE_URL 覆盖为镜像）
+_DEFAULT_ARXIV_API_BASE = "https://export.arxiv.org"
+
+
+def _arxiv_client() -> arxiv.Client:
+    """创建已配置超时与可选镜像的 arXiv Client。"""
+    base = (os.getenv("OPTIBENCH_ARXIV_BASE_URL") or "").strip().rstrip("/")
+    if base:
+        arxiv.Client.query_url_format = f"{base}/api/query?{{}}"
+    else:
+        arxiv.Client.query_url_format = f"{_DEFAULT_ARXIV_API_BASE}/api/query?{{}}"
+
+    timeout_s = (os.getenv("OPTIBENCH_ARXIV_TIMEOUT") or "120").strip()
+    try:
+        timeout_f = float(timeout_s)
+    except ValueError:
+        timeout_f = 120.0
+
+    client = arxiv.Client()
+    orig_get = client._session.get
+
+    def _get_with_timeout(*args: Any, **kwargs: Any) -> Any:
+        kwargs.setdefault("timeout", timeout_f)
+        return orig_get(*args, **kwargs)
+
+    client._session.get = _get_with_timeout
+    return client
+
+
+def _arxiv_download_domain() -> str:
+    """用于 PDF 下载的域名（Result.download_pdf(download_domain=...)）。"""
+    base = (os.getenv("OPTIBENCH_ARXIV_BASE_URL") or _DEFAULT_ARXIV_API_BASE).strip()
+    if not base.startswith(("http://", "https://")):
+        base = "https://" + base
+    parsed = urlparse(base)
+    return parsed.netloc or "export.arxiv.org"
 
 
 def get_arxiv_info(arxiv_id: str) -> dict[str, Any] | None:
@@ -20,7 +59,7 @@ def get_arxiv_info(arxiv_id: str) -> dict[str, Any] | None:
     Returns:
         包含 title, arxiv_id, summary, pdf_url, authors 的字典；未找到则返回 None。
     """
-    client = arxiv.Client()
+    client = _arxiv_client()
     search = arxiv.Search(id_list=[arxiv_id])
     try:
         paper = next(client.results(search))
@@ -59,7 +98,7 @@ def search_arxiv(
 
     # Pull a larger pool first, then filter by domain to keep enough candidates.
     candidate_pool = max(max_results * 5, max_results)
-    client = arxiv.Client()
+    client = _arxiv_client()
     search = arxiv.Search(query=query, max_results=candidate_pool)
     out: list[dict[str, Any]] = []
     for p in client.results(search):
@@ -152,13 +191,13 @@ def download_arxiv_pdf(arxiv_id: str, out_dir: str | Path) -> Path:
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    client = arxiv.Client()
+    client = _arxiv_client()
     search = arxiv.Search(id_list=[arxiv_id])
     try:
         paper = next(client.results(search))
     except StopIteration:
         raise ValueError(f"No paper found for arXiv ID: {arxiv_id}") from None
-    pdf_path = paper.download_pdf(dirpath=str(out_dir))
+    pdf_path = paper.download_pdf(dirpath=str(out_dir), download_domain=_arxiv_download_domain())
     return Path(pdf_path)
 
 
@@ -184,14 +223,14 @@ def download_paper(
     paper_dir = out_dir / arxiv_id.replace("/", "_")
     paper_dir.mkdir(parents=True, exist_ok=True)
 
-    client = arxiv.Client()
+    client = _arxiv_client()
     search = arxiv.Search(id_list=[arxiv_id])
     try:
         paper = next(client.results(search))
     except StopIteration:
         raise ValueError(f"No paper found for arXiv ID: {arxiv_id}") from None
 
-    pdf_path = paper.download_pdf(dirpath=str(paper_dir))
+    pdf_path = paper.download_pdf(dirpath=str(paper_dir), download_domain=_arxiv_download_domain())
     pdf_path = Path(pdf_path)
     result: dict[str, Any] = {
         "pdf_path": pdf_path,

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import arxiv
 
+from toolkits.paper_tools import _arxiv_client, _arxiv_download_domain
 from toolkits.pdf_converter import convert_pdf_to_markdown
 
 if TYPE_CHECKING:
@@ -25,14 +26,14 @@ def download_and_convert_paper(arxiv_id: str) -> str:
         Markdown text of the paper, or an error message.
     """
     try:
-        client = arxiv.Client()
+        client = _arxiv_client()
         search = arxiv.Search(id_list=[arxiv_id])
         paper = next(client.results(search))
     except Exception as exc:
         return f"ERROR: could not fetch paper {arxiv_id} – {exc}"
 
     with tempfile.TemporaryDirectory(prefix="optibench_dl_") as tmpdir:
-        pdf_path = paper.download_pdf(dirpath=tmpdir)
+        pdf_path = paper.download_pdf(dirpath=tmpdir, download_domain=_arxiv_download_domain())
         markdown = convert_pdf_to_markdown(str(pdf_path))
 
     title = paper.title

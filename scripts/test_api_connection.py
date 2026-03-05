@@ -25,6 +25,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+# Ollama 默认端点（与 main.py 一致）
+OLLAMA_DEFAULT_BASE_URL = "http://localhost:11434/v1"
+
 
 def main() -> None:
     provider = (os.getenv("OPTIBENCH_PROVIDER") or "openai").strip().lower()
@@ -33,6 +36,9 @@ def main() -> None:
     api_key = (os.getenv("OPTIBENCH_API_KEY") or "").strip()
     timeout_s = (os.getenv("OPTIBENCH_API_TIMEOUT") or "60").strip()
 
+    if provider == "ollama" and not base_url:
+        base_url = OLLAMA_DEFAULT_BASE_URL
+
     print("=== 环境变量 ===\n")
     print(f"  OPTIBENCH_PROVIDER = {provider!r}")
     print(f"  OPTIBENCH_MODEL   = {model_id!r}")
@@ -40,7 +46,9 @@ def main() -> None:
     print(f"  OPTIBENCH_API_KEY  = {(api_key[:8] + '...' + api_key[-4:]) if len(api_key) > 12 else '(未设置或过短)'}")
     print(f"  OPTIBENCH_API_TIMEOUT = {timeout_s!r}\n")
 
-    if provider in ("openai-like", "openailike"):
+    if provider == "ollama":
+        print("Ollama 本地模式：无需 API Key。\n")
+    elif provider in ("openai-like", "openailike"):
         if not base_url:
             print("错误: openai-like 模式下 OPTIBENCH_BASE_URL 必须设置。")
             sys.exit(1)
@@ -52,7 +60,7 @@ def main() -> None:
             print("警告: API Key 含首尾空格，已自动 strip。建议在 .env 里写成 OPTIBENCH_API_KEY=sk-xxx（等号后不要空格）。\n")
             api_key = api_key.strip()
     else:
-        print("当前仅对 openai-like 做完整测试；其他 provider 可自行加逻辑。\n")
+        print("当前仅对 openai-like / ollama 做完整测试；其他 provider 可自行加逻辑。\n")
 
     # 1) 基础 HTTP 连通性（带重试；部分服务如 DeepSeek 对未认证请求返回 401，表示已连上）
     print("=== 1) 基础连通性（最多重试 3 次） ===\n")
@@ -90,8 +98,8 @@ def main() -> None:
 
     # 2) 调用 Chat API
     print("=== 2) 调用 Chat API ===\n")
-    if provider not in ("openai-like", "openailike"):
-        print("  跳过（非 openai-like）。\n")
+    if provider not in ("openai-like", "openailike", "ollama"):
+        print("  跳过（仅对 openai-like / ollama 测试）。\n")
         return
 
     # 2a) 优先用 agno（与 main 一致）
@@ -102,7 +110,9 @@ def main() -> None:
         use_agno = False
 
     if use_agno:
-        kwargs = {"id": model_id, "base_url": base_url, "api_key": api_key}
+        kwargs = {"id": model_id, "base_url": base_url}
+        if provider != "ollama":
+            kwargs["api_key"] = api_key
         try:
             kwargs["timeout"] = float(timeout_s)
         except ValueError:
@@ -130,9 +140,9 @@ def main() -> None:
             sys.exit(1)
         return
 
-    # 2b) 无 agno 时用 urllib 发裸 POST（同样能暴露连接/SSL/401 等问题）
+    # 2b) 无 agno 时用 urllib 发裸 POST（ollama 可不传 api_key）
     print("  (未安装 agno，用 urllib 直接请求 chat/completions)\n")
-    _chat_via_urllib(base_url, model_id, api_key, timeout_s)
+    _chat_via_urllib(base_url, model_id, api_key if provider != "ollama" else "", timeout_s)
 
 
 def _chat_via_urllib(base_url: str, model_id: str, api_key: str, timeout_s: str) -> None:
